@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask Every Model</title>
+<meta name="description" content="Ask one question, get answers from models by many labs side by side, then let a judge model compare them. Bring your own Pollen.">
+<style>
+  :root {
+    --bg: #0e1116; --panel: #161b22; --panel2: #1c232e; --line: #2b3442;
+    --text: #e8edf3; --muted: #93a1b3; --accent: #f2c14e; --good: #3fb27f;
+    --bad: #e05d44; --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 18px 60px; }
+  header { margin-bottom: 22px; }
+  h1 { font-size: 34px; margin: 0 0 6px; letter-spacing: -0.5px; }
+  h1 .accent { color: var(--accent); }
+  .sub { color: var(--muted); max-width: 640px; margin: 0; }
+  section.panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 18px; margin-bottom: 18px;
+  }
+  h2 { font-size: 17px; margin: 0 0 10px; }
+  label.field { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  input[type="password"], input[type="text"], textarea, select {
+    width: 100%; background: var(--panel2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+    font: inherit; font-size: 15px;
+  }
+  textarea { min-height: 84px; resize: vertical; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .row > .grow { flex: 1 1 260px; }
+  button {
+    background: var(--accent); color: #171106; border: 0; border-radius: 8px;
+    padding: 10px 18px; font: inherit; font-weight: 650; cursor: pointer;
+  }
+  button.secondary {
+    background: transparent; color: var(--text); border: 1px solid var(--line);
+    font-weight: 550;
+  }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .key-state { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .key-state.ok { color: var(--good); }
+  .note { font-size: 13px; color: var(--muted); }
+  .models { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px 14px; }
+  .model-pick { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; cursor: pointer; }
+  .model-pick input { margin-top: 4px; accent-color: var(--accent); }
+  .demo-note {
+    border: 1px solid var(--accent); color: var(--accent); border-radius: 8px;
+    padding: 10px 12px; font-size: 14px; margin-bottom: 14px;
+  }
+  #status { color: var(--muted); min-height: 24px; margin: 10px 0 4px; }
+  #summary { font-weight: 650; margin: 4px 0 14px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 14px; min-height: 140px;
+  }
+  .card.done { border-color: #2e4a3c; }
+  .card.failed { border-color: #5a322a; }
+  .card-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .badge {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+    border: 1px solid var(--line); border-radius: 99px; padding: 2px 8px; color: var(--muted);
+    white-space: nowrap;
+  }
+  .card.done .badge { color: var(--good); border-color: #2e4a3c; }
+  .card.failed .badge { color: var(--bad); border-color: #5a322a; }
+  .card-meta { font-size: 12px; color: var(--muted); margin: 4px 0 10px; word-break: break-all; }
+  .card-body { white-space: pre-wrap; word-break: break-word; font-size: 15px; }
+  #judgeOut h3 { font-size: 14px; margin: 14px 0 4px; color: var(--accent); }
+  #judgeOut p, #judgeOut ul { margin: 4px 0; }
+  footer { color: var(--muted); font-size: 13px; margin-top: 28px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Ask <span class="accent">Every</span> Model</h1>
+    <p class="sub">One question. The same question, sent to models from different labs at the same time. Read the answers side by side, then let one model judge where they agree and where they split.</p>
+  </header>
+
+  <section class="panel">
+    <h2>1. Your Pollinations key (BYOP)</h2>
+    <label class="field" for="key">Pollinations API key. Stored only in this browser (localStorage), sent only to gen.pollinations.ai.</label>
+    <div class="row">
+      <div class="grow"><input type="password" id="key" placeholder="sk_..." autocomplete="off" spellcheck="false"></div>
+      <button type="button" class="secondary" id="saveKey">Save key</button>
+      <button type="button" class="secondary" id="checkKey">Check key</button>
+      <button type="button" class="secondary" id="clearKey">Clear</button>
+    </div>
+    <div class="key-state" id="keyState">No key yet. Demo mode is on: sample answers, no models called, nothing billed.</div>
+    <p class="note">No key? Get one free at <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener">enter.pollinations.ai/keys</a>. Every call on this page is paid from your own Pollen balance, never from the app author.</p>
+  </section>
+
+  <section class="panel">
+    <h2>2. Pick the models</h2>
+    <div class="models" id="models"></div>
+    <p class="note">Defaults are one model per lab, none paid-only, so a free tier key can run the full default set. Paid-only models need paid Pollen and are off by default.</p>
+  </section>
+
+  <section class="panel">
+    <h2>3. Ask one question</h2>
+    <label class="field" for="question">The exact same text goes to every picked model.</label>
+    <textarea id="question" placeholder="e.g. What is the capital of France?">What is the capital of France?</textarea>
+    <div class="row" style="margin-top:12px">
+      <button type="button" id="askBtn">Ask every model</button>
+      <span class="note">Ctrl+Enter or Cmd+Enter also works.</span>
+    </div>
+  </section>
+
+  <div class="demo-note" id="demoNote" hidden>Demo mode: the cards below are sample answers, clearly labelled demo. No model was called and no Pollen was spent.</div>
+  <div id="status" role="status"></div>
+  <div id="summary"></div>
+  <div class="cards" id="cards"></div>
+
+  <section class="panel" id="judgeBlock" hidden style="margin-top:18px">
+    <h2>4. Judge pass (optional)</h2>
+    <p class="note">One model reads all the answers and reports where they agree, where they differ, any outliers, and a consensus answer, in structured form.</p>
+    <div class="row">
+      <div class="grow"><select id="judgeModel"></select></div>
+      <button type="button" id="judgeBtn">Run judge</button>
+    </div>
+    <div id="judgeOut"></div>
+  </section>
+
+  <footer>
+    Built on <a href="https://pollinations.ai" target="_blank" rel="noopener">Pollinations</a>. Calls go to gen.pollinations.ai/v1/chat/completions with your key. No server, no tracking, no key ever leaves your browser except to Pollinations.
+  </footer>
+</div>
+<script src="core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
