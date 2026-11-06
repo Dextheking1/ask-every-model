@@ -1,5 +1,7 @@
 # Ask Every Model
 
+[![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)
+
 Ask one question, get answers from models by many different labs at the
 same time, side by side. Then, if you want, one model judges the set:
 where they agree, where they differ, any outliers, and a consensus answer.
